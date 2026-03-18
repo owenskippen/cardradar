@@ -22,7 +22,12 @@ def upgrade() -> None:
         sa.Column("venue", sa.String(length=255), nullable=True),
         sa.Column("address", sa.String(length=255), nullable=True),
         sa.Column("city", sa.String(length=100), nullable=True, index=True),
-        sa.Column("province", sa.String(length=10), nullable=False, server_default="BC"),
+        sa.Column(
+            "province",
+            sa.String(length=10),
+            nullable=False,
+            server_default=sa.text("'BC'"),
+        ),
         sa.Column("postal_code", sa.String(length=20), nullable=True),
         sa.Column("organizer", sa.String(length=255), nullable=True),
         sa.Column("website_url", sa.String(length=500), nullable=True),
@@ -55,7 +60,12 @@ def upgrade() -> None:
     op.create_table(
         "sources",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id"), nullable=False),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("events.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column(
             "platform",
             sa.Enum(
