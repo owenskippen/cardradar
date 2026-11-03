@@ -21,7 +21,7 @@ def require_admin(x_api_key: str | None = Header(default=None)) -> None:
 
 @router.post("/events", response_model=EventRead, dependencies=[Depends(require_admin)])
 def create_event(event_in: EventCreate, db: Session = Depends(get_db)):
-    event = Event(**event_in.model_dump())
+    event = Event(**event_in.model_dump(mode="json"))
     db.add(event)
     db.commit()
     db.refresh(event)
@@ -38,7 +38,7 @@ def update_event(event_id: int, event_in: EventUpdate, db: Session = Depends(get
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    for field, value in event_in.model_dump(exclude_unset=True).items():
+    for field, value in event_in.model_dump(mode="json", exclude_unset=True).items():
         setattr(event, field, value)
 
     db.add(event)
