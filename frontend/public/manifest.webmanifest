@@ -1,0 +1,9 @@
+{
+  "name": "CardRadar — TCG Card Shows",
+  "short_name": "CardRadar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d14",
+  "theme_color": "#0b0d14",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
