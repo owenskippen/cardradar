@@ -3,7 +3,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0002_add_ticket_and_region_fields"
+revision = "0002_ticket_and_region_fields"
 down_revision = "0001_create_events_and_sources"
 branch_labels = None
 depends_on = None
