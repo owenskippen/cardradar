@@ -11,7 +11,7 @@ from .routers import admin, events
 def create_app() -> FastAPI:
     settings = get_settings()
 
-    app = FastAPI(title="CardRadar Backend", version="0.1.0")
+    app = FastAPI(title="CardRadar API", version="0.1.0")
 
     app.add_middleware(
         CORSMiddleware,
