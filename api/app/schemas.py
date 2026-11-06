@@ -23,15 +23,21 @@ class SourceRead(SourceBase):
 class EventBase(BaseModel):
     name: str
     date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
     start_time: Optional[dt.time] = None
     end_time: Optional[dt.time] = None
     venue: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     province: str = "BC"
+    country: str = "CA"
     postal_code: Optional[str] = None
     organizer: Optional[str] = None
     website_url: Optional[HttpUrl] = None
+    ticket_url: Optional[HttpUrl] = None
+    admission: Optional[str] = None
+    table_count: Optional[int] = None
+    image_url: Optional[HttpUrl] = None
     source_url_primary: Optional[HttpUrl] = None
     description: Optional[str] = None
     tags: List[str] = []
@@ -52,15 +58,21 @@ class EventCreate(EventBase):
 class EventUpdate(BaseModel):
     name: Optional[str] = None
     date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
     start_time: Optional[dt.time] = None
     end_time: Optional[dt.time] = None
     venue: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     province: Optional[str] = None
+    country: Optional[str] = None
     postal_code: Optional[str] = None
     organizer: Optional[str] = None
     website_url: Optional[HttpUrl] = None
+    ticket_url: Optional[HttpUrl] = None
+    admission: Optional[str] = None
+    table_count: Optional[int] = None
+    image_url: Optional[HttpUrl] = None
     source_url_primary: Optional[HttpUrl] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None

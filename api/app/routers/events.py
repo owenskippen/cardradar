@@ -4,7 +4,7 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -17,6 +17,8 @@ router = APIRouter(prefix="/events", tags=["events"])
 @router.get("", response_model=List[EventRead])
 def list_events(
     city: Optional[str] = Query(default=None),
+    province: Optional[str] = Query(default=None, description="e.g. BC, AB, ON"),
+    country: Optional[str] = Query(default=None, description="CA or US"),
     start_date: Optional[date] = Query(default=None),
     end_date: Optional[date] = Query(default=None),
     tags: Optional[str] = Query(
@@ -32,9 +34,14 @@ def list_events(
 
     if city:
         stmt = stmt.where(Event.city.ilike(f"%{city}%"))
+    if province:
+        stmt = stmt.where(Event.province == province.upper())
+    if country:
+        stmt = stmt.where(Event.country == country.upper())
 
     if start_date:
-        stmt = stmt.where(Event.date >= start_date)
+        # include multi-day shows that started earlier but are still running
+        stmt = stmt.where(func.coalesce(Event.end_date, Event.date) >= start_date)
     if end_date:
         stmt = stmt.where(Event.date <= end_date)
 
