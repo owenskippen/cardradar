@@ -56,14 +56,6 @@ def list_events(
     return events
 
 
-@router.get("/{event_id}", response_model=EventRead)
-def get_event(event_id: int, db: Session = Depends(get_db)):
-    event = db.get(Event, event_id)
-    if not event or event.is_hidden:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return event
-
-
 @router.get("/map", response_model=List[EventMapPoint])
 def get_event_map_points(
     city: Optional[str] = Query(default=None),
@@ -99,3 +91,10 @@ def get_event_map_points(
         for e in events
     ]
 
+
+@router.get("/{event_id}", response_model=EventRead)
+def get_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.get(Event, event_id)
+    if not event or event.is_hidden:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, time, datetime
+import datetime as dt
 from typing import Optional, List
 
 from pydantic import BaseModel, HttpUrl, field_validator
@@ -9,12 +9,12 @@ from pydantic import BaseModel, HttpUrl, field_validator
 class SourceBase(BaseModel):
     platform: str
     source_url: HttpUrl
-    scraped_at: Optional[datetime] = None
+    scraped_at: Optional[dt.datetime] = None
 
 
 class SourceRead(SourceBase):
     id: int
-    created_at: datetime
+    created_at: dt.datetime
 
     class Config:
         from_attributes = True
@@ -22,9 +22,9 @@ class SourceRead(SourceBase):
 
 class EventBase(BaseModel):
     name: str
-    date: Optional[date] = None
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
+    date: Optional[dt.date] = None
+    start_time: Optional[dt.time] = None
+    end_time: Optional[dt.time] = None
     venue: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
@@ -51,9 +51,9 @@ class EventCreate(EventBase):
 
 class EventUpdate(BaseModel):
     name: Optional[str] = None
-    date: Optional[date] = None
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
+    date: Optional[dt.date] = None
+    start_time: Optional[dt.time] = None
+    end_time: Optional[dt.time] = None
     venue: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
@@ -71,8 +71,8 @@ class EventUpdate(BaseModel):
 
 class EventRead(EventBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
     sources: List[SourceRead] = []
 
     class Config:
@@ -82,7 +82,7 @@ class EventRead(EventBase):
 class EventMapPoint(BaseModel):
     id: int
     name: str
-    date: Optional[date]
+    date: Optional[dt.date]
     city: Optional[str]
     lat: float
     lng: float
