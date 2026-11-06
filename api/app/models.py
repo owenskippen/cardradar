@@ -94,3 +94,31 @@ class Source(Base):
 
     event: Mapped[Event] = relationship("Event", back_populates="sources")
 
+
+
+class IngestOutcome(str):
+    CREATED = "created"  # at least one new (hidden) event was saved
+    MERGED = "merged"  # every show matched an existing event
+    PAST = "past"  # announced shows have already happened
+    NOT_A_SHOW = "not_a_show"  # Claude decided it isn't an upcoming card show
+
+
+class IngestedPost(Base):
+    """Every post Claude has checked, so later ingest runs can skip it.
+
+    Posts that only failed the keyword filter or hit an API error are not
+    recorded: the filter is free to re-run and errors should be retried.
+    """
+
+    __tablename__ = "ingested_posts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    url: Mapped[str] = mapped_column(String(500), nullable=False, unique=True, index=True)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    reason: Mapped[Optional[str]] = mapped_column(Text)
+    confidence: Mapped[Optional[float]] = mapped_column(Float)
+    first_checked_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_checked_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

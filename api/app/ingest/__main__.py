@@ -31,6 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument("--dry-run", action="store_true", help="extract and print, don't write to the database")
     common.add_argument("--no-geocode", action="store_true", help="skip OpenStreetMap geocoding")
     common.add_argument("--skip-filter", action="store_true", help="send every post to Claude, not just keyword matches")
+    common.add_argument("--recheck", action="store_true", help="re-send posts Claude previously checked and skipped")
 
     p_file = sub.add_parser("file", parents=[common], help="ingest posts from a JSON file")
     p_file.add_argument("path")
@@ -82,6 +83,7 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=args.dry_run,
                 do_geocode=not args.no_geocode,
                 skip_filter=args.skip_filter,
+                recheck=args.recheck,
             )
         except anthropic.AuthenticationError:
             print("\nAnthropic API key was rejected - check ANTHROPIC_API_KEY.", file=sys.stderr)

@@ -42,6 +42,21 @@ curl -X POST localhost:8000/api/admin/events -H "X-Api-Key: changeme-admin-key" 
   -d '{"name":"Example Show","date":"2026-12-05","start_time":"10:00","city":"Richmond","venue":"...","ticket_url":"https://...","table_count":60,"admission":"$5","tags":["pokemon"]}'
 ```
 
+## Ingest card shows
+
+The ingest pipeline finds card shows in social posts: keyword filter, then Claude extraction, then geocoding, then dedupe. New shows are saved **hidden** for review. Set `ANTHROPIC_API_KEY` in `api/.env` (see `api/.env.example`).
+
+```bash
+cd api
+python -m app.ingest file ingest_samples/captions.json --dry-run   # preview, writes nothing
+python -m app.ingest file ingest_samples/captions.json             # save as hidden events
+python -m app.ingest instagram --region bc                          # Instagram Graph API (needs IG_USER_ID / IG_ACCESS_TOKEN)
+```
+
+Posts Claude has already checked are recorded in `ingested_posts` and skipped on later runs; pass `--recheck` to process them again.
+
+Publish a reviewed show with `PATCH /api/admin/events/{id}` and `{"is_hidden": false}`.
+
 ## Public API
 
 - `GET /api/events?province=BC&country=CA&city=&start_date=&end_date=&tags=&search=`

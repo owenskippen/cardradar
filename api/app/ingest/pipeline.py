@@ -11,7 +11,7 @@ from dateutil import parser as dateparser
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Event, Source
+from ..models import Event, IngestedPost, IngestOutcome, Source
 from .dedupe import find_duplicate
 from .extract import KNOWN_TAGS, ExtractedShow, ExtractionError, extract_shows
 from .geocode import geocode
@@ -28,6 +28,7 @@ MIN_CONFIDENCE = 0.4
 class Stats:
     posts: int = 0
     already_seen: int = 0
+    previously_skipped: int = 0
     filtered_out: int = 0
     not_a_show: int = 0
     errors: int = 0
@@ -38,6 +39,7 @@ class Stats:
     def summary(self) -> str:
         return (
             f"{self.posts} posts: {self.already_seen} already ingested, "
+            f"{self.previously_skipped} previously checked and skipped, "
             f"{self.filtered_out} failed keyword filter, {self.not_a_show} not upcoming shows, "
             f"{self.errors} errors -> {self.created} new hidden events, "
             f"{self.merged} merged into existing events"
@@ -112,6 +114,17 @@ def _fill_missing(event: Event, show: ExtractedShow, start: Optional[time], end:
         event.tags = list(event.tags or []) + new_tags
 
 
+def _record(db: Session, post: Post, outcome: str, reason: str | None, confidence: float | None) -> None:
+    """Upsert the post into ingested_posts so later runs skip it."""
+    url = post.url[:500]
+    row = db.scalar(select(IngestedPost).where(IngestedPost.url == url))
+    if row is None:
+        db.add(IngestedPost(url=url, platform=post.platform, outcome=outcome, reason=reason, confidence=confidence))
+    else:
+        row.outcome, row.reason, row.confidence = outcome, reason, confidence
+        row.last_checked_at = datetime.utcnow()
+
+
 def ingest_posts(
     db: Session,
     posts: Iterable[Post],
@@ -120,20 +133,34 @@ def ingest_posts(
     dry_run: bool = False,
     do_geocode: bool = True,
     skip_filter: bool = False,
+    recheck: bool = False,
 ) -> Stats:
+    """Process posts; recheck=True re-sends posts previously skipped by Claude."""
     stats = Stats()
     today = datetime.now()
+    seen_this_run: set[str] = set()
 
     for post in posts:
+        url = post.url[:500]
+        if url in seen_this_run:  # same post under several hashtags
+            continue
+        seen_this_run.add(url)
+
         stats.posts += 1
         label = post.url if len(post.url) < 70 else post.url[:67] + "..."
         print(f"\n[{stats.posts}] {label}")
 
-        seen = db.scalar(select(Source.id).where(Source.source_url == post.url[:500]).limit(1))
-        if seen:
+        if db.scalar(select(Source.id).where(Source.source_url == url).limit(1)):
             stats.already_seen += 1
             print("  already ingested - skipping")
             continue
+
+        if not recheck:
+            prior = db.scalar(select(IngestedPost).where(IngestedPost.url == url))
+            if prior is not None:
+                stats.previously_skipped += 1
+                print(f"  checked {prior.last_checked_at:%Y-%m-%d} ({prior.outcome}) - skipping")
+                continue
 
         if not skip_filter and not looks_like_card_show(post.text):
             stats.filtered_out += 1
@@ -160,8 +187,12 @@ def ingest_posts(
         print(f"  claude: show_post={result.is_card_show_post} confidence={result.confidence:.2f} - {result.reason}")
         if not result.is_card_show_post or not result.shows or result.confidence < MIN_CONFIDENCE:
             stats.not_a_show += 1
+            if not dry_run:
+                _record(db, post, IngestOutcome.NOT_A_SHOW, result.reason, result.confidence)
+                db.commit()
             continue
 
+        created_here = merged_here = 0
         for show in result.shows:
             show_date = _parse_date(show.date)
             if show_date and show_date < today.date():
@@ -181,6 +212,7 @@ def ingest_posts(
             if existing:
                 print(f"    duplicate of event #{existing.id} ({existing.name}) - adding as a source")
                 stats.merged += 1
+                merged_here += 1
                 if not dry_run:
                     _fill_missing(existing, show, start, end)
                     existing.sources.append(_source_for(post, show, result.confidence))
@@ -193,6 +225,7 @@ def ingest_posts(
                 print(f"    geocoded ({precision}): {lat}, {lng}")
 
             stats.created += 1
+            created_here += 1
             if dry_run:
                 continue
 
@@ -221,7 +254,16 @@ def ingest_posts(
             stats.created_ids.append(event.id)
             print(f"    saved as hidden event #{event.id}")
 
+        if created_here:
+            outcome = IngestOutcome.CREATED
+        elif merged_here:
+            outcome = IngestOutcome.MERGED
+        else:
+            outcome = IngestOutcome.PAST
+            stats.not_a_show += 1
+
         if not dry_run:
+            _record(db, post, outcome, result.reason, result.confidence)
             db.commit()
 
     if dry_run:
