@@ -31,7 +31,7 @@ cd api
 python -m venv .venv && .venv/Scripts/activate   # Windows; use bin/activate on macOS/Linux
 pip install -e .
 set DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/cardradar
-alembic upgrade head
+python -m alembic upgrade head   # plain `alembic` can't import `app`
 uvicorn app.main:app --reload
 ```
 
