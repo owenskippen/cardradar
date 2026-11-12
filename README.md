@@ -35,7 +35,9 @@ python -m alembic upgrade head   # plain `alembic` can't import `app`
 uvicorn app.main:app --reload
 ```
 
-Add shows through the admin API (`X-Api-Key: $ADMIN_API_KEY`):
+Load the known recurring shows (Collector's Fest, West Van, Guildford, ...) with `python -m app.seed_shows`. Add new dates to `app/seed_shows.py` as organizers announce them and re-run it; it updates existing rows rather than duplicating them.
+
+Or add shows through the admin API (`X-Api-Key: $ADMIN_API_KEY`):
 
 ```bash
 curl -X POST localhost:8000/api/admin/events -H "X-Api-Key: changeme-admin-key" -H "Content-Type: application/json" \
