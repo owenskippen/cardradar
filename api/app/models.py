@@ -67,6 +67,7 @@ class SourcePlatformEnum(str):
     SHOP = "shop"
     CONVENTION_CENTER = "convention_center"
     MANUAL = "manual"
+    REDDIT = "reddit"
 
 
 class Source(Base):
@@ -83,6 +84,7 @@ class Source(Base):
             SourcePlatformEnum.SHOP,
             SourcePlatformEnum.CONVENTION_CENTER,
             SourcePlatformEnum.MANUAL,
+            SourcePlatformEnum.REDDIT,
             name="source_platform_enum",
         ),
         nullable=False,

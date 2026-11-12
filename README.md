@@ -51,7 +51,10 @@ cd api
 python -m app.ingest file ingest_samples/captions.json --dry-run   # preview, writes nothing
 python -m app.ingest file ingest_samples/captions.json             # save as hidden events
 python -m app.ingest instagram --region bc                          # Instagram Graph API (needs IG_USER_ID / IG_ACCESS_TOKEN)
+python -m app.ingest reddit --region bc --dry-run                   # Reddit API (needs REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET)
 ```
+
+The Reddit source searches each region's local subreddits (`subreddits` in `app/ingest/regions.py`) for card show words, and searches the card subreddits (r/PokemonTCG, r/sportscards, ...) for the region's place names (`reddit_places`). Create a "script" app at https://www.reddit.com/prefs/apps to get the client id and secret. Use `--time week` for frequent runs and `--no-card-subs` to search only the local subreddits.
 
 Posts Claude has already checked are recorded in `ingested_posts` and skipped on later runs; pass `--recheck` to process them again.
 
