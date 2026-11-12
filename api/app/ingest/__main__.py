@@ -1,10 +1,12 @@
-"""CLI: python -m app.ingest {file,instagram} ...
+"""CLI: python -m app.ingest {file,instagram,reddit} ...
 
 Examples (run from api/):
   python -m app.ingest file ingest_samples/captions.json --region bc
   python -m app.ingest file captions.json --dry-run
   python -m app.ingest instagram --region bc
   python -m app.ingest instagram --region bc --accounts somecardshow,someshop --no-hashtags
+  python -m app.ingest reddit --region bc --dry-run
+  python -m app.ingest reddit --region bc --time week --no-card-subs
 
 New events are saved hidden. Review them with GET /api/admin/events and
 publish with PATCH /api/admin/events/{id} {"is_hidden": false}.
@@ -40,6 +42,13 @@ def main(argv: list[str] | None = None) -> int:
     p_ig.add_argument("--accounts", help="comma-separated usernames (default: region's list)")
     p_ig.add_argument("--no-hashtags", action="store_true", help="only read accounts, skip hashtag search")
 
+    p_rd = sub.add_parser("reddit", parents=[common], help="search Reddit via the official API")
+    p_rd.add_argument("--subreddits", help="comma-separated local subreddits (default: region's list)")
+    p_rd.add_argument("--no-card-subs", action="store_true",
+                      help="skip searching card subreddits (r/PokemonTCG ...) for the region's place names")
+    p_rd.add_argument("--time", default="month", choices=["day", "week", "month", "year"],
+                      help="how far back to search (default: month)")
+
     args = parser.parse_args(argv)
 
     if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
@@ -60,6 +69,16 @@ def main(argv: list[str] | None = None) -> int:
 
         posts = load_posts(args.path)
         print(f"Loaded {len(posts)} posts from {args.path}")
+    elif args.source == "reddit":
+        from .sources import reddit
+
+        subreddits = args.subreddits.split(",") if args.subreddits else region.subreddits
+        posts = reddit.search_posts(
+            [s.strip().removeprefix("r/") for s in subreddits if s.strip()],
+            None if args.no_card_subs else region.reddit_place_query,
+            time_filter=args.time,
+        )
+        print(f"Searching Reddit for {region.label}")
     else:
         from itertools import chain
 

@@ -18,6 +18,14 @@ class Region:
     hashtags: list[str] = field(default_factory=list)
     # Organizer / shop accounts to read via Business Discovery.
     accounts: list[str] = field(default_factory=list)
+    # Reddit: local subreddits are searched for card show words; place names are
+    # searched for in the card subreddits (see app/ingest/sources/reddit.py).
+    subreddits: list[str] = field(default_factory=list)
+    reddit_places: list[str] = field(default_factory=list)
+
+    @property
+    def reddit_place_query(self) -> str | None:
+        return " OR ".join(f'"{p}"' if " " in p else p for p in self.reddit_places) or None
 
 
 REGIONS: dict[str, Region] = {
@@ -35,6 +43,8 @@ REGIONS: dict[str, Region] = {
             "kelownacardshow",
         ],
         accounts=[],
+        subreddits=["vancouver", "britishcolumbia", "surrey", "burnaby", "VictoriaBC", "kelowna"],
+        reddit_places=["vancouver", "richmond bc", "surrey bc", "burnaby", "victoria bc", "kelowna", "lower mainland"],
     ),
     "toronto": Region(
         id="toronto",
@@ -43,6 +53,8 @@ REGIONS: dict[str, Region] = {
         country="CA",
         hashtags=["torontocardshow", "gtacardshow", "ontariocardshow"],
         accounts=[],
+        subreddits=["toronto", "ontario", "mississauga", "brampton"],
+        reddit_places=["toronto", "gta", "mississauga", "brampton", "markham"],
     ),
     "alberta": Region(
         id="alberta",
@@ -51,6 +63,8 @@ REGIONS: dict[str, Region] = {
         country="CA",
         hashtags=["calgarycardshow", "edmontoncardshow", "albertacardshow"],
         accounts=[],
+        subreddits=["alberta", "Calgary", "Edmonton"],
+        reddit_places=["calgary", "edmonton", "alberta"],
     ),
 }
 
